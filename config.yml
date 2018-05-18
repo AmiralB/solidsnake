@@ -1,20 +1,22 @@
+#Samples
 SAMPLES: 
-  - child
   - father
   - mother
+  - child
 
-
+#Directories
 FASTQ_DIR: "/omaha-beach/hlemoine/fastq"
+TMP_DIR: "/home/genouest/bgc/hlemoine/project/solidsnake/data/tmp"
+#DATABASE_DIR: "/omaha-beach/hlemoine/databases"
 
+#Databases
+HG19_PATH: "/omaha-beach/hlemoine/databases/hg19_UCSC/ucsc.hg19.fasta" #Ref
+#HG19_DICT_PATH: "/omaha-beach/hlemoine/databases/hg19_UCSC/ucsc.hg19.dict" #Sort Freebayes
+GOLDINDEL_PATH: "/omaha-beach/hlemoine/databases/bundle_GATK/Mills_and_1000G_gold_standard.indels.hg19.vcf" #Base Recalibration
+DBSNP_PATH: "/omaha-beach/hlemoine/databases/bundle_GATK/dbsnp_138.hg19.vcf" #Base Recalibration/Haplotype Caller
+REFSEQ_PATH: "/omaha-beach/hlemoine/databases/bedfiles/RefSeq_UCSC_Exons_hg19_padded50.bed" #BED for Variant Calling
+DBSNPEFF: "/omaha-beach/hlemoine/databases/snpeff/hg19"
 
-HG19_PATH: "/groups/bgc/hg19/refseq/hg19_from2bit.fa "
-
- #? "/data/bio-databases/hg19_UCSC/bwa_index/hg19" # Alignment
-# REF: "/data/bio-databases/hg19_UCSC/ucsc.hg19.fasta" # Ref
-# DICT: "/data/bio-databases/hg19_UCSC/ucsc.hg19.dict" # Sort Freebayes
-# DBSNP: "/data/bio-databases/hg19_Bundle_GATK/dbsnp_138.hg19.vcf" # Base Recalibration / Haplotype Caller
-# GOLDINDEL: "/data/bio-databases/hg19_Bundle_GATK/Mills_and_1000G_gold_standard.indels.hg19.vcf" # Base Recalibration
-
-# REFSEQ: "/data/bio-databases/BedFiles/RefSeq_UCSC_Exons_hg19_padded100.bed" # BED for Variant Calling
-
-# DBSNPEFF: ""
+#Scripts
+FIXBAI_PATH: "/home/genouest/bgc/hlemoine/project/solidsnake/scripts/fix_bai.pl"
+VCFSORT_PATH: "/home/genouest/bgc/hlemoine/project/solidsnake/scripts/vcfsorter.pl"
