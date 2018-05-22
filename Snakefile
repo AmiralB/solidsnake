@@ -14,11 +14,11 @@ rule alignment:
 		R2 = config["FASTQ_DIR"] + "/" +"{sample}_R2.fastq"
 	output:
 		"{sample}.sam"
-	log:
-		"{sample}.bwa"
+	# log:
+	# 	"{sample}.bwa"
 	shell:
 		'bwa mem -a -R "@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:GENOMIQUE\\tPL:illumina" '
-		'-t {threads} {config[HG19_PATH]} {input.R1} {input.R2} > {output} > {log}' 
+		'-t {threads} {config[HG19_PATH]} {input.R1} {input.R2} > {output} ' #> {log}
 
 rule samtobam:
 	input:
@@ -52,7 +52,8 @@ rule markduplicates:
 	shell:
 		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
 		'MarkDuplicates I={input} O={output} METRICS_FILE={log.metrics} '
-	 	'VALIDATION_STRINGENCY=LENIENT CREATE_INDEX=true 2> {log.stdout} ' #MAX_RECORDS_IN_RAM=5000000 CREATE_MD5_FILE=true READ_NAME_REGEX=null 
+	 	'VALIDATION_STRINGENCY=LENIENT CREATE_INDEX=true '#MAX_RECORDS_IN_RAM=5000000 CREATE_MD5_FILE=true READ_NAME_REGEX=null
+	 	'2> {log.stdout} '  
 
 
 ##Base Recalibration
@@ -62,6 +63,8 @@ rule baserecalibration:
 		"{sample}.sort.md.bam"
 	output:
 		"{sample}.sort.md.recal.table"
+	# log:
+	# 	"{sample}.bwa"
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
 		'BaseRecalibrator -R {config[HG19_PATH]} -I {input} -O {output} '
@@ -101,13 +104,13 @@ rule combineGVCFs:
 		"all.haplotypecaller.snp_indel.g.vcf"
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
-		'CombineGVCFs -R {config[HG19_PATH]} -V {input} -O {output} -L {config[REFSEQ_PATH]} -D {config[DBSNP_PATH]} '
+		'CombineGVCFs -R {config[HG19_PATH]} -V {input[0]} -V {input[1]} -O {output} -L {config[REFSEQ_PATH]} -D {config[DBSNP_PATH]} '
 
 rule genotypeGVCFs:
 	input:
 		"all.haplotypecaller.snp_indel.g.vcf"
 	output:
-		"all.haplotypecaller.snp_indel.vcf"
+		"all.haplotypecaller.snp_indel.sort.vcf"
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
 		'GenotypeGVCFs -R {config[HG19_PATH]} -V {input} -O {output} -L {config[REFSEQ_PATH]} -D {config[DBSNP_PATH]} '
@@ -142,32 +145,32 @@ rule freebayes:
 # 	shell:
 # 		'{config[VCFSORT_PATH]} {config[HG19_DICT_PATH]} {input} > {output} '
 
-# rule sortvcf:
-# 	input:
-# 		"all.freebayes.snp_indel.vcf"
-# 	output:
-# 		"all.freebayes.snp_indel.sort.vcf"
-# 	shell:
-# 		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
-#		'SortVcf R={config[HG19_PATH]} I={input} O={output} SD={confi[HG19_DICT_PATH]} '
+rule sortvcf:
+	input:
+		"all.freebayes.snp_indel.vcf"
+	output:
+		"all.freebayes.snp_indel.sort.vcf"
+	shell:
+		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
+		'SortVcf R={config[HG19_PATH]} I={input} O={output} SD={config[HG19_DICT_PATH]} '
 
 
 ##Hard Filter
 
 rule variantfiltration:
 	input:
-		"all.{caller}.snp_indel.vcf"
+		"all.{caller}.snp_indel.sort.vcf"
 	output:
 		"all.{caller}.snp_indel.filtered.vcf"
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" ' 
-		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --clusterWindowSize 10 '
+		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
 		'--filter-expression "MQ0 >= 4 && ((MQ0 / (1.0*DP)) > 0.1)" --filter-name "HARD_TO_VALIDATE" '
 		'--filter-expression "DP < 5" --filter-name "LOW_COVERAGE" '
 		'--filter-expression "QUAL < 30.0" --filter-name "VERY_LOW_QUAL" '
 		'--filter-expression "QUAL > 30.0 && QUAL < 50.0" --filter-name "LOW_QUAL" '
 		'--filter-expression "QD < 1.5" --filter-name "LOW_QD" '
-		'--filterExpression "FS > 60.0 " --filterName "FisherStrandBias" ' #voir si erreur (tp)
+		'--filter-expression "FS > 60.0 " --filter-name "FisherStrandBias" ' #voir si erreur (tp)
 
 rule selectSNP:
 	input:
@@ -194,7 +197,7 @@ rule SNPfiltration:
 		"all.{caller}.snp.filtered.vcf"
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
-		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --clusterWindowSize 10 '
+		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
 		'--filter-expression "DP < 10 || QD < 2.0 || FS > 60.0 || MQ < 40.0 || HaplotypeScore > 13.0 || MappingQualityRankSum < -12.5 || ReadPosRankSum < -8.0" --filter-name "SNP_FILTER" '
 
 rule INDELfiltration:
@@ -204,7 +207,7 @@ rule INDELfiltration:
 		"all.{caller}.indel.filtered.vcf"
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
-		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --clusterWindowSize 10 '
+		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
 		'--filter-expression "DP < 10 || QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0" --filter-name "INDEL_FILTER" '
 
 rule mergefiltration:
@@ -240,7 +243,7 @@ rule VCFnormalization: #decompose?
 	output:
 		"all.combined.snp_indel.clean.vcf"
 	shell:
-		'vt normalize {input} -r {config[HG19_PATH]} | vt uniq -o {output} '
+		'vt normalize {input} -r {config[HG19_PATH]} | vt uniq - -o {output} '
 
 
 ## Relatedness
@@ -249,7 +252,7 @@ rule relatedness:
 	input:
 		"all.combined.snp_indel.clean.vcf"
 	output:
-		"vcftools_relatedness2"
+		"all.combined.relatedness2"
 	shell:
 		"vcftools --vcf {input} --relatedness2 --out {output}"
 
