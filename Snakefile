@@ -1,12 +1,19 @@
 configfile: 'config.yml'
-#report : 'report.rst'
 
 rule master:
 	input:
-		expand('{sample}.sam', sample = config['SAMPLES']),
+		expand('{sample}..', sample = config['SAMPLES']),
 		'all.combined.ann.vcf',
 		'all.combined.relatedness2',
 		'mutiqc_report.html'
+
+
+###Pre-Process
+# rule bcltofast
+
+# rule gzip
+
+
 
 
 ### Alignment
@@ -206,14 +213,13 @@ rule variantfiltration:
 	#	'all.variantfilt.benchmark.txt'
 	threads:
 		12	
-
 	params : 
 		 filter_args = " ".join(["--filter-expression '{}' --filter-name '{}'".format(v,i) for i,v in config["FILTER"].items()])
-
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" ' 
 		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
-		'{params.filter_args} 2> {log} '
+		'{params.filter_args} '
+		'2> {log} '
 
 
 rule selectSNP:
@@ -365,25 +371,36 @@ rule relatedness:
 		'{prefix}.combined.snp_indel.clean.vcf'
 	output:
 		'{prefix}.relatedness2'
-
 	log:
 		'{prefix}.relatedness2.log'
-
 	#benchmark:
 	#	'all.relatedness2.benchmark.txt'
 	shell:
-		'vcftools --vcf {input} --relatedness2 --out {wildcards.prefix} 2> {log}'
+		'vcftools --vcf {input} --relatedness2 --out {wildcards.prefix} '
+		'2> {log}'
 
 
-rule multiqc:
-	input:
-		'.'
-	output:
-		'multiqc_report.html'
-	log:
-		'multiqc.log'
-	#benchmark:
-	#	'multiqc.benchmark.txt'
-	shell:
-		'multiqc {input} -o {output} '
-		'2> {log} '
+# rule multiqc:
+# 	input:
+# 		'.'
+# 	output:
+# 		'multiqc_report.html'
+# 	log:
+# 		'multiqc.log'
+# 	#benchmark:
+# 	#	'multiqc.benchmark.txt'
+# 	shell:
+# 		'multiqc {input} -o {output} '
+# 		'2> {log} '
+
+# rule bamtocram:
+# 	input:
+# 		'.bam'
+# 	output:
+# 		'.cram'
+# 	log:
+# 		'{prefix}.relatedness2.log'
+# 	#benchmark:
+# 	#	'all.relatedness2.benchmark.txt'
+# 	shell:
+# 		'vcftools --vcf {input} --relatedness2 --out {wildcards.prefix} 2> {log}'
