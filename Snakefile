@@ -1,26 +1,26 @@
-configfile: "config.yml"
-report : "report.rst"
+configfile: 'config.yml'
+#report : 'report.rst'
 
 rule master:
 	input:
-		expand("{sample}.sam", sample = config["SAMPLES"]),
-		"all.combined.ann.vcf",
-		"all.combined.relatedness2",
-		"mutiqc_report.html"
+		expand('{sample}.sam', sample = config['SAMPLES']),
+		'all.combined.ann.vcf',
+		'all.combined.relatedness2',
+		'mutiqc_report.html'
 
 
 ### Alignment
 
 rule alignment:
 	input:
-		R1 = config["FASTQ_DIR"] + "/" + "{sample}_R1.fastq",# gz
-		R2 = config["FASTQ_DIR"] + "/" + "{sample}_R2.fastq"
+		R1 = config['FASTQ_DIR'] + '/' + '{sample}_R1.fastq',# gz
+		R2 = config['FASTQ_DIR'] + '/' + '{sample}_R2.fastq'
 	output:
-		"{sample}.sam"
+		'{sample}.sam'
 	log:
-		"{sample}.bwa.log"	
+		'{sample}.bwa.log'	
 	#benchmark:
-	#	"{sample}.bwa.benchmark.txt"
+	#	'{sample}.bwa.benchmark.txt'
 	threads:
 		12
 	shell:
@@ -31,11 +31,11 @@ rule alignment:
 
 rule sortbam:
 	input:
-		"{sample}.sam"
+		'{sample}.sam'
 	output:
-		"{sample}.sort.bam"
+		'{sample}.sort.bam'
 	#benchmark:
-	#	"{sample}.sortbam.benchmark.txt"
+	#	'{sample}.sortbam.benchmark.txt'
 	threads:
 		12
 	shell:
@@ -47,14 +47,14 @@ rule sortbam:
 
 rule markduplicates:
 	input:
-		"{sample}.sort.bam"
+		'{sample}.sort.bam'
 	output:
-		"{sample}.sort.md.bam"
+		'{sample}.sort.md.bam'
 	log:
-		metrics = "{sample}.sort.md.metrics",
-		errout  = "{sample}.md.log"
+		metrics = '{sample}.sort.md.metrics',
+		errout  = '{sample}.md.log'
 	#benchmark:
-	#	"{sample}.md.benchmark.txt"
+	#	'{sample}.md.benchmark.txt'
 	threads:
 		12	
 	shell:
@@ -68,13 +68,13 @@ rule markduplicates:
 
 rule baserecalibration:
 	input:
-		"{sample}.sort.md.bam"
+		'{sample}.sort.md.bam'
 	output:
-		"{sample}.sort.md.recal.table"
+		'{sample}.sort.md.recal.table'
 	log:
-		"{sample}.br.log"
+		'{sample}.br.log'
 	#benchmark:
-	#	"{sample}.br.benchmark.txt"
+	#	'{sample}.br.benchmark.txt'
 	threads:
 		12
 	shell:
@@ -87,14 +87,14 @@ rule baserecalibration:
 
 rule applyBQSR:
 	input:
-		bam = "{sample}.sort.md.bam",
-		table = "{sample}.sort.md.recal.table"
+		bam = '{sample}.sort.md.bam',
+		table = '{sample}.sort.md.recal.table'
 	output:
-		"{sample}.sort.md.recal.bam"
+		'{sample}.sort.md.recal.bam'
 	log:
-		"{sample}.bqsr.log"
+		'{sample}.bqsr.log'
 	#benchmark:
-	#	"{sample}.bqsr.benchmark.txt"
+	#	'{sample}.bqsr.benchmark.txt'
 	threads:
 		12
 	shell:
@@ -110,13 +110,13 @@ rule applyBQSR:
 
 rule haplotypecaller:
 	input:
-		"{sample}.sort.md.recal.bam"
+		'{sample}.sort.md.recal.bam'
 	output:
-		"{sample}.haplotypecaller.snp_indel.g.vcf"
+		'{sample}.haplotypecaller.snp_indel.g.vcf'
 	log:
-		"{sample}.haplotypecaller.log"
+		'{sample}.haplotypecaller.log'
 	#benchmark:
-	#	"{sample}.haplotypecaller.benchmark.txt"
+	#	'{sample}.haplotypecaller.benchmark.txt'
 	threads:
 		12
 	shell:
@@ -128,13 +128,13 @@ rule haplotypecaller:
 
 rule combineGVCFs:
 	input:
-		expand("{sample}.haplotypecaller.snp_indel.g.vcf", sample = config["SAMPLES"])
+		expand('{sample}.haplotypecaller.snp_indel.g.vcf', sample = config['SAMPLES'])
 	output:
-		"all.haplotypecaller.snp_indel.g.vcf"
+		'all.haplotypecaller.snp_indel.g.vcf'
 	log:
-		"all.cGVCF.log"
+		'all.cGVCF.log'
 	#benchmark:
-	#	"all.cGVCF.benchmark.txt"
+	#	'all.cGVCF.benchmark.txt'
 	threads:
 		12
 	shell:
@@ -145,13 +145,13 @@ rule combineGVCFs:
 
 rule genotypeGVCFs:
 	input:
-		"all.haplotypecaller.snp_indel.g.vcf"
+		'all.haplotypecaller.snp_indel.g.vcf'
 	output:
-		"all.haplotypecaller.snp_indel.sort.vcf"
+		'all.haplotypecaller.snp_indel.sort.vcf'
 	log:
-		"all.gGVCF.log"
+		'all.gGVCF.log'
 	#benchmark:
-	#	"all.gGVCF.benchmark.txt"
+	#	'all.gGVCF.benchmark.txt'
 	threads:
 		12
 	shell:
@@ -165,13 +165,11 @@ rule genotypeGVCFs:
 
 rule freebayes:
 	input:
-		expand("{sample}.sort.md.bam", sample = config["SAMPLES"])
+		expand('{sample}.sort.md.bam', sample = config['SAMPLES'])
 	output:
-		"all.freebayes.snp_indel.vcf"
+		'all.freebayes.snp_indel.vcf'
 	#benchmark:
-	#	"all.freebayes.benchmark.txt"
-	#threads:
-	#	
+	#	'all.freebayes.benchmark.txt'
 	shell:
 		'freebayes --fasta-reference {config[HG19_PATH]} -v {output} -b {input} -t {config[REFSEQ_PATH]} '
 		'--min-alternate-count 2 --min-alternate-qsum 40 --pvar 0.0001 --use-mapping-quality --posterior-integration-limits 1,3 '
@@ -180,13 +178,13 @@ rule freebayes:
 
 rule sortvcf:
 	input:
-		"all.freebayes.snp_indel.vcf"
+		'all.freebayes.snp_indel.vcf'
 	output:
-		"all.freebayes.snp_indel.sort.vcf"
+		'all.freebayes.snp_indel.sort.vcf'
 	log:
-		"all.fbsortvcf.log"
+		'all.fbsortvcf.log'
 	#benchmark:
-	#	"all.fbsortvcf.benchmark.txt"
+	#	'all.fbsortvcf.benchmark.txt'
 	threads:
 		12
 	shell:
@@ -199,13 +197,13 @@ rule sortvcf:
 
 rule variantfiltration:
 	input:
-		"all.{caller}.snp_indel.sort.vcf"
+		'all.{caller}.snp_indel.sort.vcf'
 	output:
-		"all.{caller}.snp_indel.filtered.vcf"
+		'all.{caller}.snp_indel.filtered.vcf'
 	log:
-		"all.{caller}.variantfilt.log"
+		'all.{caller}.variantfilt.log'
 	#benchmark:
-	#	"all.variantfilt.benchmark.txt"
+	#	'all.variantfilt.benchmark.txt'
 	threads:
 		12	
 	shell:
@@ -216,19 +214,19 @@ rule variantfiltration:
 		'--filter-expression "QUAL < 30.0" --filter-name "VERY_LOW_QUAL" '
 		'--filter-expression "QUAL > 30.0 && QUAL < 50.0" --filter-name "LOW_QUAL" '
 		'--filter-expression "QD < 1.5" --filter-name "LOW_QD" '
-		'--filter-expression "FS > 60.0 " --filter-name "FisherStrandBias" ' #voir si erreur (tp)
+		'--filter-expression "FS > 60.0 " --filter-name "FisherStrandBias" '
 		'2> {log} '
 
 
 rule selectSNP:
 	input:
-		"all.{caller}.snp_indel.filtered.vcf"
+		'all.{caller}.snp_indel.filtered.vcf'
 	output:
-		"all.{caller}.snp.vcf"
+		'all.{caller}.snp.vcf'
 	log:
-		"all.{caller}.selectSNP.log"
+		'all.{caller}.selectSNP.log'
 	#benchmark:
-	#	"all.selectSNP.benchmark.txt"
+	#	'all.selectSNP.benchmark.txt'
 	threads:
 		12	
 	shell:
@@ -239,13 +237,13 @@ rule selectSNP:
 
 rule selectINDEL:
 	input:
-		"all.{caller}.snp_indel.filtered.vcf"
+		'all.{caller}.snp_indel.filtered.vcf'
 	output:
-		"all.{caller}.indel.vcf"
+		'all.{caller}.indel.vcf'
 	log:
-		"all.{caller}.selectINDEL.log"
+		'all.{caller}.selectINDEL.log'
 	#benchmark:
-	#	"all.selectINDEL.benchmark.txt"
+	#	'all.selectINDEL.benchmark.txt'
 	threads:
 		12	
 	shell:
@@ -256,13 +254,13 @@ rule selectINDEL:
 
 rule SNPfiltration:
 	input:
-		"all.{caller}.snp.vcf"
+		'all.{caller}.snp.vcf'
 	output:
-		"all.{caller}.snp.filtered.vcf"
+		'all.{caller}.snp.filtered.vcf'
 	log:
-		"all.{caller}.SNPfilt.log"
+		'all.{caller}.SNPfilt.log'
 	#benchmark:
-	#	"all.SNPfilt.benchmark.txt"
+	#	'all.SNPfilt.benchmark.txt'
 	threads:
 		12	
 	shell:
@@ -274,13 +272,13 @@ rule SNPfiltration:
 
 rule INDELfiltration:
 	input:
-		"all.{caller}.indel.vcf"
+		'all.{caller}.indel.vcf'
 	output:
-		"all.{caller}.indel.filtered.vcf"
+		'all.{caller}.indel.filtered.vcf'
 	log:
-		"all.{caller}.INDELfilt.log"
+		'all.{caller}.INDELfilt.log'
 	#benchmark:
-	#	"all.INDELfilt.benchmark.txt"
+	#	'all.INDELfilt.benchmark.txt'
 	threads:
 		12	
 	shell:
@@ -292,14 +290,14 @@ rule INDELfiltration:
 
 rule mergefiltration:
 	input:
-		snp = "all.{caller}.snp.filtered.vcf",
-		indel = "all.{caller}.indel.filtered.vcf"
+		snp = 'all.{caller}.snp.filtered.vcf',
+		indel = 'all.{caller}.indel.filtered.vcf'
 	output:
-		"all.{caller}.snp_indel.filtered2.vcf"
+		'all.{caller}.snp_indel.filtered2.vcf'
 	log:
-		"all.{caller}.mergefilt.log"
+		'all.{caller}.mergefilt.log'
 	#benchmark:
-	#	"all.mergefilt.benchmark.txt"
+	#	'all.mergefilt.benchmark.txt'
 	threads:
 		12	
 	shell:
@@ -313,14 +311,14 @@ rule mergefiltration:
 
 rule combineVCFs:
 	input:
-		haplo = "all.haplotypecaller.snp_indel.filtered2.vcf",
-		fb = "all.freebayes.snp_indel.filtered2.vcf"
+		haplo = 'all.haplotypecaller.snp_indel.filtered2.vcf',
+		fb = 'all.freebayes.snp_indel.filtered2.vcf'
 	output:
-		"all.combined.snp_indel.vcf"
+		'all.combined.snp_indel.vcf'
 	log:
-		"all.cVCF.log"
+		'all.cVCF.log'
 	#benchmark:
-	#	"all.cVCF.benchmark.txt"
+	#	'all.cVCF.benchmark.txt'
 	threads:
 		12
 	shell:
@@ -333,15 +331,13 @@ rule combineVCFs:
 
 rule VCFnormalization:
 	input:
-		"all.combined.snp_indel.vcf"
+		'all.combined.snp_indel.vcf'
 	output:
-		"all.combined.snp_indel.clean.vcf"
+		'all.combined.snp_indel.clean.vcf'
 	log:
-		"all.VCFnorm.log"
+		'all.VCFnorm.log'
 	#benchmark:
-	#	"all.VCFnorm.benchmark.txt"
-	#threads:
-	#
+	#	'all.VCFnorm.benchmark.txt'
 	shell:
 		'vt normalize {input} -r {config[HG19_PATH]} | vt uniq - -o {output} '
 		'2> {log} '
@@ -351,31 +347,30 @@ rule VCFnormalization:
 
 rule annotation:
 	input:
-		"all.combined.snp_indel.clean.vcf"
+		'all.combined.snp_indel.clean.vcf'
 	output:
-		"all.combined.ann.vcf"
+		'all.combined.ann.vcf'
 	#benchmark:
-	#	"all.snpeff.benchmark.txt"
+	#	'all.snpeff.benchmark.txt'
 	threads:
 		12
 	shell:
 		'snpEff -Xmx4g -XX:ParallelGCThreads={threads} '
-		'hg19 {input} > {output} '
+		'hg19 {input} -t > {output} '
+# add other annotation databases (vcf) if neccessary
 
 
 ### Post-Process
 
 rule relatedness:
 	input:
-		"all.combined.snp_indel.clean.vcf"
+		'all.combined.snp_indel.clean.vcf'
 	output:
-		"all.combined.relatedness2"
+		'all.combined'
 	log:
-		"all.relatedness2.log"
+		'all.relatedness2.log'
 	#benchmark:
-	#	"all.relatedness2.benchmark.txt"
-	#threads:
-	#
+	#	'all.relatedness2.benchmark.txt'
 	shell:
 		'vcftools --vcf {input} --relatedness2 --out {output} '
 		'2> {log} '
@@ -383,15 +378,13 @@ rule relatedness:
 
 rule multiqc:
 	input:
-		"."
+		'.'
 	output:
-		"multiqc_report.html"
+		'multiqc_report.html'
 	log:
-		"multiqc.log"
+		'multiqc.log'
 	#benchmark:
-	#	"multiqc.benchmark.txt"
-	#threads:
-	#
+	#	'multiqc.benchmark.txt'
 	shell:
 		'multiqc {input} -o {output} '
 		'2> {log} '
