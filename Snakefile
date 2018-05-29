@@ -339,8 +339,8 @@ rule VCFnormalization:
 	#benchmark:
 	#	'all.VCFnorm.benchmark.txt'
 	shell:
-		'vt normalize {input} -r {config[HG19_PATH]} | vt uniq - -o {output} '
-		'2> {log} '
+		'vt normalize {input} -r {config[HG19_PATH]} 2> {log} | vt uniq - -o {output} '
+		'2>> {log} '
 
 
 ### Annotation
@@ -364,16 +364,17 @@ rule annotation:
 
 rule relatedness:
 	input:
-		'all.combined.snp_indel.clean.vcf'
+		'{prefix}.combined.snp_indel.clean.vcf'
 	output:
-		'all.combined'
+		'{prefix}.relatedness2'
+
 	log:
-		'all.relatedness2.log'
+		'{prefix}.relatedness2.log'
+
 	#benchmark:
 	#	'all.relatedness2.benchmark.txt'
 	shell:
-		'vcftools --vcf {input} --relatedness2 --out {output} '
-		'2> {log} '
+		'vcftools --vcf {input} --relatedness2 --out {wildcards.prefix} 2> {log}'
 
 
 rule multiqc:
