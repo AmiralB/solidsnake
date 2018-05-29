@@ -206,16 +206,14 @@ rule variantfiltration:
 	#	'all.variantfilt.benchmark.txt'
 	threads:
 		12	
+
+	params : 
+		 filter_args = " ".join(["--filter-expression '{}' --filter-name '{}'".format(v,i) for i,v in config["FILTER"].items()])
+
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" ' 
 		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
-		'--filter-expression "MQ0 >= 4 && ((MQ0 / (1.0*DP)) > 0.1)" --filter-name "HARD_TO_VALIDATE" '
-		'--filter-expression "DP < 5" --filter-name "LOW_COVERAGE" '
-		'--filter-expression "QUAL < 30.0" --filter-name "VERY_LOW_QUAL" '
-		'--filter-expression "QUAL > 30.0 && QUAL < 50.0" --filter-name "LOW_QUAL" '
-		'--filter-expression "QD < 1.5" --filter-name "LOW_QD" '
-		'--filter-expression "FS > 60.0 " --filter-name "FisherStrandBias" '
-		'2> {log} '
+		'{params.filter_args} 2> {log} '
 
 
 rule selectSNP:

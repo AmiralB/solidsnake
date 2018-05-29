@@ -14,3 +14,8 @@ DBSNP_PATH: "/omaha-beach/hlemoine/databases/bundle_GATK/dbsnp_138.hg19.vcf" #Ba
 REFSEQ_PATH: "/omaha-beach/hlemoine/databases/bedfiles/RefSeq_UCSC_Exons_hg19_padded50.bed" #BED for Variant Calling
 
 #DBSNPEFF: "/omaha-beach/hlemoine/databases/snpeff/hg19"
+
+
+FILTER:
+  LOW_COVERAGE: "DP < 5"
+  LOW_QUAL: "QUAL > 30.0 && QUAL < 50.0"
