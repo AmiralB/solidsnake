@@ -33,7 +33,7 @@ rule alignment:
 	shell:
 		'bwa mem -a -R "@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:GENOMIQUE\\tPL:illumina" '
 		'-t {threads} {config[HG19_PATH]} {input.R1} {input.R2} > {output} '
-		'2> {log} '
+		#'2> {log} '
 
 
 rule sortbam:
@@ -68,7 +68,7 @@ rule markduplicates:
 		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
 		'MarkDuplicates I={input} O={output} METRICS_FILE={log.metrics} '
 		'VALIDATION_STRINGENCY=LENIENT CREATE_INDEX=true '
-		'2> {log.errout} '  
+		#'2> {log.errout} '  
 
 
 ##Base Recalibration
@@ -89,7 +89,7 @@ rule baserecalibration:
 		'BaseRecalibrator -R {config[HG19_PATH]} -I {input} -O {output} '
 		'--known-sites {config[DBSNP_PATH]} --known-sites {config[GOLDINDEL_PATH]} '
 		'--use-original-qualities --read-validation-stringency LENIENT '
-		'2> {log} '
+		#'2> {log} '
 
 
 rule applyBQSR:
@@ -109,7 +109,7 @@ rule applyBQSR:
 		'ApplyBQSR -R {config[HG19_PATH]} -I {input.bam} -O {output} -bqsr {input.table} '
 		'--static-quantized-quals 10 --static-quantized-quals 20 --static-quantized-quals 30 '
 		'--use-original-qualities --read-validation-stringency LENIENT ' 
-		'2> {log} '
+		#'2> {log} '
 
 
 ### Variant Calling
@@ -130,7 +130,7 @@ rule haplotypecaller:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
 		'HaplotypeCaller -R {config[HG19_PATH]} -I {input} -O {output} -L {config[REFSEQ_PATH]} -D {config[DBSNP_PATH]} '
 		'-ip 100 -ERC GVCF '
-		'2> {log} '
+		#'2> {log} '
 
 
 rule combineGVCFs:
@@ -147,7 +147,7 @@ rule combineGVCFs:
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
 		'CombineGVCFs -R {config[HG19_PATH]} -V {input[0]} -V {input[1]} -O {output} -L {config[REFSEQ_PATH]} -D {config[DBSNP_PATH]} '
-		'2> {log} '
+		#'2> {log} '
 
 
 rule genotypeGVCFs:
@@ -165,7 +165,7 @@ rule genotypeGVCFs:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
 		'GenotypeGVCFs -R {config[HG19_PATH]} -V {input} -O {output} -L {config[REFSEQ_PATH]} -D {config[DBSNP_PATH]} '
 		'-ip 100 -stand-call-conf 10.0 '
-		'2> {log} ' 
+		#'2> {log} ' 
 
 
 ## Freebayes
@@ -197,7 +197,7 @@ rule sortvcf:
 	shell:
 		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
 		'SortVcf R={config[HG19_PATH]} I={input} O={output} SD={config[HG19_DICT_PATH]} '
-		'2> {log} '
+		#'2> {log} '
 
 
 ##Hard Filter
@@ -219,7 +219,7 @@ rule variantfiltration:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" ' 
 		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
 		'{params.filter_args} '
-		'2> {log} '
+		#'2> {log} '
 
 
 rule selectSNP:
@@ -236,7 +236,7 @@ rule selectSNP:
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
 		'SelectVariants -R {config[HG19_PATH]} -V {input} -O {output} -select-type SNP '
-		'2> {log} '
+		#'2> {log} '
 
 
 rule selectINDEL:
@@ -253,7 +253,7 @@ rule selectINDEL:
 	shell:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
 		'SelectVariants -R {config[HG19_PATH]} -V {input} -O {output} -select-type INDEL '
-		'2> {log} '
+		#'2> {log} '
 
 
 rule SNPfiltration:
@@ -271,7 +271,7 @@ rule SNPfiltration:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
 		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
 		'--filter-expression "DP < 10 || QD < 2.0 || FS > 60.0 || MQ < 40.0 || HaplotypeScore > 13.0 || MappingQualityRankSum < -12.5 || ReadPosRankSum < -8.0" --filter-name "SNP_FILTER" '
-		'2> {log} '
+		#'2> {log} '
 
 
 rule INDELfiltration:
@@ -289,7 +289,7 @@ rule INDELfiltration:
 		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
 		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
 		'--filter-expression "DP < 10 || QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0" --filter-name "INDEL_FILTER" '
-		'2> {log} '
+		#'2> {log} '
 
 
 rule mergefiltration:
@@ -297,7 +297,7 @@ rule mergefiltration:
 		snp = 'all.{caller}.snp.filtered.vcf',
 		indel = 'all.{caller}.indel.filtered.vcf'
 	output:
-		'all.{caller}.snp_indel.filtered2.vcf'
+		'all.{caller}.snp_indel.filteredfinal.vcf'
 	log:
 		'all.{caller}.mergefilt.log'
 	#benchmark:
@@ -307,7 +307,7 @@ rule mergefiltration:
 	shell:
 		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
 		'MergeVcfs R={config[HG19_PATH]} I={input.snp} I={input.indel} O={output} '
-		'2> {log} '
+		#'2> {log} '
 
 
 ### Prepare Annotation
@@ -315,8 +315,8 @@ rule mergefiltration:
 
 rule combineVCFs:
 	input:
-		haplo = 'all.haplotypecaller.snp_indel.filtered2.vcf',
-		fb = 'all.freebayes.snp_indel.filtered2.vcf'
+		haplo = 'all.haplotypecaller.snp_indel.filteredfinal.vcf',
+		fb = 'all.freebayes.snp_indel.filteredfinal.vcf'
 	output:
 		'all.combined.snp_indel.vcf'
 	log:
@@ -328,10 +328,26 @@ rule combineVCFs:
 	shell:
 		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
 		'MergeVcfs R={config[HG19_PATH]} I={input.haplo} I={input.fb} O={output} '
-		'2> {log} '
+		#'2> {log} '
 
 
 ## Clean
+
+rule allelicdecomposition:
+	input:
+		'all.combined.snp_indel.vcf'
+	output:
+		'all.combined.snp_indel.decomposed.vcf'
+	log:
+		'all.decomposition.log'
+	#benchmark:
+	#	'all.decomposition.benchmark.txt'
+	shell:
+		'vt decompose {input} -o {output} '
+		#'2> {log} '
+
+
+
 
 rule VCFnormalization:
 	input:
@@ -343,8 +359,9 @@ rule VCFnormalization:
 	#benchmark:
 	#	'all.VCFnorm.benchmark.txt'
 	shell:
-		'vt normalize {input} -r {config[HG19_PATH]} 2> {log} | vt uniq - -o {output} '
-		'2>> {log} '
+		'vt normalize {input} -r {config[HG19_PATH]} | vt uniq - -o {output} '
+		#'2>> {log} '
+# 2> {log}
 
 
 ### Annotation
@@ -377,21 +394,8 @@ rule relatedness:
 	#	'all.relatedness2.benchmark.txt'
 	shell:
 		'vcftools --vcf {input} --relatedness2 --out {wildcards.prefix} '
-		'2> {log}'
+		#'2> {log}'
 
-
-# rule multiqc:
-# 	input:
-# 		'.'
-# 	output:
-# 		'multiqc_report.html'
-# 	log:
-# 		'multiqc.log'
-# 	#benchmark:
-# 	#	'multiqc.benchmark.txt'
-# 	shell:
-# 		'multiqc {input} -o {output} '
-# 		'2> {log} '
 
 # rule bamtocram:
 # 	input:
@@ -403,4 +407,5 @@ rule relatedness:
 # 	#benchmark:
 # 	#	'all.relatedness2.benchmark.txt'
 # 	shell:
-# 		'vcftools --vcf {input} --relatedness2 --out {wildcards.prefix} 2> {log}'
+# 		'vcftools --vcf {input} --relatedness2 --out {wildcards.prefix} '
+#		#'2> {log}'
