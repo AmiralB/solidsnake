@@ -20,6 +20,18 @@ rule master:
 #  	shell:
 #  		'fastqc -o fastQC {input}'
 
+rule unzip:
+	input:
+		config['FASTQ_DIR'] + '/' + '{filename}.fastq.gz'
+	output:
+		config['FASTQ_DIR'] + '/' + '{filename}.fastq'
+	log:
+		'{filename}.unzip.log'
+	#benchmark:
+	#	'.decompression.benchmark.txt'
+	shell:
+		'gunzip {input} > {output} '
+		#'2> {log} '
 
 '''
 Alignement d'une paire de fastq en sam
@@ -341,18 +353,18 @@ rule combineVCFs:
 
 ## Clean
 
-# rule allelicdecomposition:
-# 	input:
-# 		'all.combined.snp_indel.vcf'
-# 	output:
-# 		'all.combined.snp_indel.decomposed.vcf'
-# 	log:
-# 		'all.decomposition.log'
-# 	#benchmark:
-# 	#	'all.decomposition.benchmark.txt'
-# 	shell:
-# 		'vt decompose {input} -o {output} '
-# 		#'2> {log} '
+rule allelicdecomposition:
+	input:
+		'all.snp_indel.vcf'
+	output:
+		'all.snp_indel.decomposed.vcf'
+	log:
+		'all.decomposition.log'
+	#benchmark:
+	#	'all.decomposition.benchmark.txt'
+	shell:
+		'vt decompose {input} -o {output} '
+		#'2> {log} '
 
 
 

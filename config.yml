@@ -1,12 +1,23 @@
 #Samples
 SAMPLES: 
-  - mother
-  - father
+  - 18-11165-A-02-00
+  - 18-11165-A-02-00
+  - 18-11168-A-02-00
+  - 18-11168-A-02-00
+  - 18-12350-A-02-00
+  - 18-12350-A-02-00
+  - 18-12354-A-02-00
+  - 18-12354-A-02-00
+  - 18-12509-A-01-00
+  - 18-12509-A-01-00
+  - 18-15109-A-01-00
+  - 18-15109-A-01-00
+
 
 #Directories
 # FASTQ_DIR: "/omaha-beach/hlemoine/fastq"
  
-FASTQ_DIR: "/home/genouest/bgc/hlemoine/project/solidsnake/datatest"
+FASTQ_DIR: "/omaha-beach/hlemoine/fastq/all"
 
 
 #Databases
@@ -16,6 +27,7 @@ GOLDINDEL_PATH: "/omaha-beach/hlemoine/databases/bundle_GATK/Mills_and_1000G_gol
 DBSNP_PATH: "/omaha-beach/hlemoine/databases/bundle_GATK/dbsnp_138.hg19.vcf"
 REFSEQ_PATH: "/omaha-beach/hlemoine/databases/bedfiles/RefSeq_UCSC_Exons_hg19_padded50.bed"
 #DBSNPEFF: "/omaha-beach/hlemoine/databases/snpeff/hg19"
+
 
 
 
