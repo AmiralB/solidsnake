@@ -21,6 +21,9 @@ rule master:
 #  		'fastqc -o fastQC {input}'
 
 
+'''
+Alignement d'une paire de fastq en sam
+'''
 rule alignment:
 	input:
 		R1 = config['FASTQ_DIR'] + '/' + '{sample}_R1.fastq',# gz
@@ -33,6 +36,8 @@ rule alignment:
 	#	'{sample}.bwa.benchmark.txt'
 	threads:
 		12
+	message:
+		"Alignment of fastq"
 	shell:
 		'bwa mem -a -R "@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:GENOMIQUE\\tPL:illumina" '
 		'-t {threads} {config[HG19_PATH]} {input.R1} {input.R2} > {output} '
@@ -142,7 +147,7 @@ rule combineGVCFs:
 	output:
 		'all.haplotypecaller.snp_indel.g.vcf'
 	log:
-		'all.cGVCF.log'
+		'all.combineGVCFs.log'
 	#benchmark:
 	#	'all.cGVCF.benchmark.txt'
 	threads:
@@ -157,9 +162,9 @@ rule genotypeGVCFs:
 	input:
 		'all.haplotypecaller.snp_indel.g.vcf'
 	output:
-		'all.haplotypecaller.snp_indel.sort.vcf'
+		'all.haplotypecaller.snp_indel.vcf'
 	log:
-		'all.gGVCF.log'
+		'all.genotypeGVCFs.log'
 	#benchmark:
 	#	'all.gGVCF.benchmark.txt'
 	threads:
@@ -177,7 +182,7 @@ rule freebayes:
 	input:
 		expand('{sample}.sort.md.bam', sample = config['SAMPLES'])
 	output:
-		'all.freebayes.snp_indel.vcf'
+		'all.freebayes.snp_indel.unsorted.vcf'
 	#benchmark:
 	#	'all.freebayes.benchmark.txt'
 	shell:
@@ -188,9 +193,9 @@ rule freebayes:
 
 rule sortvcf:
 	input:
-		'all.freebayes.snp_indel.vcf'
+		'all.freebayes.snp_indel.unsorted.vcf'
 	output:
-		'all.freebayes.snp_indel.sort.vcf'
+		'all.freebayes.snp_indel.vcf'
 	log:
 		'all.fbsortvcf.log'
 	#benchmark:
@@ -207,11 +212,11 @@ rule sortvcf:
 
 rule variantfiltration:
 	input:
-		'all.{caller}.snp_indel.sort.vcf'
+		'all.{caller}.snp_indel.vcf'
 	output:
 		'all.{caller}.snp_indel.filtered.vcf'
 	log:
-		'all.{caller}.variantfilt.log'
+		'all.{caller}.variantfiltration.log'
 	#benchmark:
 	#	'all.variantfilt.benchmark.txt'
 	threads:
@@ -265,14 +270,14 @@ rule SNPfiltration:
 	output:
 		'all.{caller}.snp.filtered.vcf'
 	log:
-		'all.{caller}.SNPfilt.log'
+		'all.{caller}.SNPfiltration.log'
 	#benchmark:
 	#	'all.SNPfilt.benchmark.txt'
 	threads:
 		12	
 	shell:
 		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
-		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
+		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 ' #TODO
 		'--filter-expression "DP < 10 || QD < 2.0 || FS > 60.0 || MQ < 40.0 || HaplotypeScore > 13.0 || MappingQualityRankSum < -12.5 || ReadPosRankSum < -8.0" --filter-name "SNP_FILTER" '
 		#'2> {log} '
 
@@ -283,14 +288,14 @@ rule INDELfiltration:
 	output:
 		'all.{caller}.indel.filtered.vcf'
 	log:
-		'all.{caller}.INDELfilt.log'
+		'all.{caller}.INDELfiltration.log'
 	#benchmark:
 	#	'all.INDELfilt.benchmark.txt'
 	threads:
 		12	
 	shell:
 		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
-		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
+		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 ' #TODO
 		'--filter-expression "DP < 10 || QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0" --filter-name "INDEL_FILTER" '
 		#'2> {log} '
 
@@ -300,9 +305,9 @@ rule mergefiltration:
 		snp = 'all.{caller}.snp.filtered.vcf',
 		indel = 'all.{caller}.indel.filtered.vcf'
 	output:
-		'all.{caller}.snp_indel.filteredfinal.vcf'
+		'all.{caller}.snp_indel.final.vcf'
 	log:
-		'all.{caller}.mergefilt.log'
+		'all.{caller}.mergefiltration.log'
 	#benchmark:
 	#	'all.mergefilt.benchmark.txt'
 	threads:
@@ -318,10 +323,10 @@ rule mergefiltration:
 
 rule combineVCFs:
 	input:
-		haplo = 'all.haplotypecaller.snp_indel.filteredfinal.vcf',
-		fb = 'all.freebayes.snp_indel.filteredfinal.vcf'
+		haplo = 'all.haplotypecaller.snp_indel.final.vcf',
+		fb    = 'all.freebayes.snp_indel.final.vcf'
 	output:
-		'all.combined.snp_indel.vcf'
+		'all.snp_indel.vcf'
 	log:
 		'all.cVCF.log'
 	#benchmark:
@@ -354,11 +359,11 @@ rule combineVCFs:
 
 rule VCFnormalization:
 	input:
-		'all.combined.snp_indel.vcf'
+		'all.snp_indel.vcf'
 	output:
-		'all.combined.snp_indel.clean.vcf'
+		'all.snp_indel.norm.vcf'
 	log:
-		'all.VCFnorm.log'
+		'all.VCFnormalization.log'
 	#benchmark:
 	#	'all.VCFnorm.benchmark.txt'
 	shell:
@@ -371,9 +376,9 @@ rule VCFnormalization:
 
 rule annotation:
 	input:
-		'all.combined.snp_indel.clean.vcf'
+		'all.snp_indel.norm.vcf'
 	output:
-		'all.combined.ann.vcf'
+		'all.snp_indel.norm.ann.vcf'
 	#benchmark:
 	#	'all.snpeff.benchmark.txt'
 	threads:
@@ -388,7 +393,7 @@ rule annotation:
 
 rule relatedness:
 	input:
-		'{prefix}.combined.snp_indel.clean.vcf'
+		'{prefix}.snp_indel.norm.vcf'
 	output:
 		'{prefix}.relatedness2'
 	log:
