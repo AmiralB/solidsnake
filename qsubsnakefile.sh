@@ -1,8 +1,24 @@
 #! /bin/bash
+# Les commentraires qui commencent par '#$' sont
+# interpretes par SGE comme des options en ligne
+
+# Shell a utiliser pour l'execution du job
 #$ -S /bin/bash
-#$ -M lemoinehugo1@gmail.com
+
+#$ -o /ngs/datagen/diag-genet/MEX/TEST/QXT_MEX_Fam2618HPE/RESULTS_GATK4.log
+
+#$ -cwd
+
 #$ -N snakefile
+
+# Utilisateur a avertir
+#$ -M hugo.lemoine@etudiant.univ-rennes1.fr
+
+# Avertir au debut (b)egin, a la fin (e)nd, a l'eliminaton (a)bort et a la suspension (s)uspend d'un job
 #$ -m bea
+
+# Export de toutes les variables d'environnement
+#$ -V
 
 DIR="result_test3"
 

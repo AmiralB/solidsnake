@@ -1,10 +1,13 @@
 #Samples
 SAMPLES: 
-  - father
   - mother
+  - father
 
 #Directories
-FASTQ_DIR: "/omaha-beach/hlemoine/fastq"
+# FASTQ_DIR: "/omaha-beach/hlemoine/fastq"
+ 
+FASTQ_DIR: "/home/genouest/bgc/hlemoine/project/solidsnake/datatest"
+
 
 #Databases
 HG19_PATH: "/omaha-beach/hlemoine/databases/hg19_UCSC/ucsc.hg19.fasta"
@@ -17,8 +20,7 @@ REFSEQ_PATH: "/omaha-beach/hlemoine/databases/bedfiles/RefSeq_UCSC_Exons_hg19_pa
 
 
 #Parameters
-JAVA:
-  MAX_MEMORY: "4g"
+JAVA_ARGS: "-Xmx4G"
 
 FREEBAYES:
   MIN_ALTERNATE_QSUM: 40
@@ -30,3 +32,7 @@ FILTER:
   LOW_QUAL: "QUAL > 30.0 && QUAL < 50.0"
   LOW_QD: "QD < 1.5"
   FISHER_STRAND_BIAS: "FS > 60.0"
+
+FILTER_SNP:
+
+FILTER_INDEL:

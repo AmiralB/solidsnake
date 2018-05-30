@@ -2,21 +2,24 @@ configfile: 'config.yml'
 
 rule master:
 	input:
-		expand('{sample}..', sample = config['SAMPLES']),
+		expand('{sample}.sam', sample = config['SAMPLES']),
 		'all.combined.ann.vcf',
-		'all.combined.relatedness2',
-		'mutiqc_report.html'
-
-
-###Pre-Process
-# rule bcltofast
-
-# rule gzip
-
-
+		'all.relatedness2'
 
 
 ### Alignment
+
+# rule bcltofastq:
+
+
+# # rule fastqc:
+# 	input:
+# 		config['FASTQ_DIR'] + '/' + '{sample}_R1.fastq'
+#  	output:
+#  		'fastQC/{afile}_fastqc.zip'
+#  	shell:
+#  		'fastqc -o fastQC {input}'
+
 
 rule alignment:
 	input:
@@ -65,7 +68,7 @@ rule markduplicates:
 	threads:
 		12	
 	shell:
-		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
+		'picard {config[JAVA_ARGS]} -XX:ParallelGCThreads={threads} '
 		'MarkDuplicates I={input} O={output} METRICS_FILE={log.metrics} '
 		'VALIDATION_STRINGENCY=LENIENT CREATE_INDEX=true '
 		#'2> {log.errout} '  
@@ -85,7 +88,7 @@ rule baserecalibration:
 	threads:
 		12
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
 		'BaseRecalibrator -R {config[HG19_PATH]} -I {input} -O {output} '
 		'--known-sites {config[DBSNP_PATH]} --known-sites {config[GOLDINDEL_PATH]} '
 		'--use-original-qualities --read-validation-stringency LENIENT '
@@ -105,7 +108,7 @@ rule applyBQSR:
 	threads:
 		12
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
 		'ApplyBQSR -R {config[HG19_PATH]} -I {input.bam} -O {output} -bqsr {input.table} '
 		'--static-quantized-quals 10 --static-quantized-quals 20 --static-quantized-quals 30 '
 		'--use-original-qualities --read-validation-stringency LENIENT ' 
@@ -127,7 +130,7 @@ rule haplotypecaller:
 	threads:
 		12
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
 		'HaplotypeCaller -R {config[HG19_PATH]} -I {input} -O {output} -L {config[REFSEQ_PATH]} -D {config[DBSNP_PATH]} '
 		'-ip 100 -ERC GVCF '
 		#'2> {log} '
@@ -145,7 +148,7 @@ rule combineGVCFs:
 	threads:
 		12
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
 		'CombineGVCFs -R {config[HG19_PATH]} -V {input[0]} -V {input[1]} -O {output} -L {config[REFSEQ_PATH]} -D {config[DBSNP_PATH]} '
 		#'2> {log} '
 
@@ -162,7 +165,7 @@ rule genotypeGVCFs:
 	threads:
 		12
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
 		'GenotypeGVCFs -R {config[HG19_PATH]} -V {input} -O {output} -L {config[REFSEQ_PATH]} -D {config[DBSNP_PATH]} '
 		'-ip 100 -stand-call-conf 10.0 '
 		#'2> {log} ' 
@@ -195,7 +198,7 @@ rule sortvcf:
 	threads:
 		12
 	shell:
-		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
+		'picard {config[JAVA_ARGS]} -XX:ParallelGCThreads={threads} '
 		'SortVcf R={config[HG19_PATH]} I={input} O={output} SD={config[HG19_DICT_PATH]} '
 		#'2> {log} '
 
@@ -216,7 +219,7 @@ rule variantfiltration:
 	params : 
 		 filter_args = " ".join(["--filter-expression '{}' --filter-name '{}'".format(v,i) for i,v in config["FILTER"].items()])
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" ' 
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" ' 
 		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
 		'{params.filter_args} '
 		#'2> {log} '
@@ -234,7 +237,7 @@ rule selectSNP:
 	threads:
 		12	
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
 		'SelectVariants -R {config[HG19_PATH]} -V {input} -O {output} -select-type SNP '
 		#'2> {log} '
 
@@ -251,7 +254,7 @@ rule selectINDEL:
 	threads:
 		12	
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
 		'SelectVariants -R {config[HG19_PATH]} -V {input} -O {output} -select-type INDEL '
 		#'2> {log} '
 
@@ -268,7 +271,7 @@ rule SNPfiltration:
 	threads:
 		12	
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
 		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
 		'--filter-expression "DP < 10 || QD < 2.0 || FS > 60.0 || MQ < 40.0 || HaplotypeScore > 13.0 || MappingQualityRankSum < -12.5 || ReadPosRankSum < -8.0" --filter-name "SNP_FILTER" '
 		#'2> {log} '
@@ -286,7 +289,7 @@ rule INDELfiltration:
 	threads:
 		12	
 	shell:
-		'gatk --java-options "-Xmx4g -XX:ParallelGCThreads={threads}" '
+		'gatk --java-options "{config[JAVA_ARGS]} -XX:ParallelGCThreads={threads}" '
 		'VariantFiltration -R {config[HG19_PATH]} -V {input} -O {output} --cluster-window-size 10 '
 		'--filter-expression "DP < 10 || QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0" --filter-name "INDEL_FILTER" '
 		#'2> {log} '
@@ -305,7 +308,7 @@ rule mergefiltration:
 	threads:
 		12	
 	shell:
-		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
+		'picard {config[JAVA_ARGS]} -XX:ParallelGCThreads={threads} '
 		'MergeVcfs R={config[HG19_PATH]} I={input.snp} I={input.indel} O={output} '
 		#'2> {log} '
 
@@ -326,25 +329,25 @@ rule combineVCFs:
 	threads:
 		12
 	shell:
-		'picard -Xmx4g -XX:ParallelGCThreads={threads} '
+		'picard {config[JAVA_ARGS]} -XX:ParallelGCThreads={threads} '
 		'MergeVcfs R={config[HG19_PATH]} I={input.haplo} I={input.fb} O={output} '
 		#'2> {log} '
 
 
 ## Clean
 
-rule allelicdecomposition:
-	input:
-		'all.combined.snp_indel.vcf'
-	output:
-		'all.combined.snp_indel.decomposed.vcf'
-	log:
-		'all.decomposition.log'
-	#benchmark:
-	#	'all.decomposition.benchmark.txt'
-	shell:
-		'vt decompose {input} -o {output} '
-		#'2> {log} '
+# rule allelicdecomposition:
+# 	input:
+# 		'all.combined.snp_indel.vcf'
+# 	output:
+# 		'all.combined.snp_indel.decomposed.vcf'
+# 	log:
+# 		'all.decomposition.log'
+# 	#benchmark:
+# 	#	'all.decomposition.benchmark.txt'
+# 	shell:
+# 		'vt decompose {input} -o {output} '
+# 		#'2> {log} '
 
 
 
@@ -376,7 +379,7 @@ rule annotation:
 	threads:
 		12
 	shell:
-		'snpEff -Xmx4g -XX:ParallelGCThreads={threads} '
+		'snpEff {config[JAVA_ARGS]} -XX:ParallelGCThreads={threads} '
 		'hg19 {input} -t > {output} '
 # add other annotation databases (vcf) if neccessary
 
@@ -391,21 +394,52 @@ rule relatedness:
 	log:
 		'{prefix}.relatedness2.log'
 	#benchmark:
-	#	'all.relatedness2.benchmark.txt'
+	#	'{prefix}.relatedness2.benchmark.txt'
 	shell:
 		'vcftools --vcf {input} --relatedness2 --out {wildcards.prefix} '
-		#'2> {log}'
+		#'2> {log} '
 
 
-# rule bamtocram:
+
+### Conversion
+
+rule bamtocram:
+	input:
+		'{filename}.bam'
+	output:
+		'{filename}.cram'
+	log:
+		'{filename}.bamtocram.log'
+	#benchmark:
+	#	'{filename}.bamtocram.benchmark.txt'
+	shell:
+		'samtools view -C -T {config[HG19_PATH]} {input} -o {output} '
+		#'2> {log} '
+
+
+# rule compression:
 # 	input:
-# 		'.bam'
+# 		'{filename}'
 # 	output:
-# 		'.cram'
+# 		'{filename}.tgt.gz'
 # 	log:
-# 		'{prefix}.relatedness2.log'
+# 		'.compression.log'
 # 	#benchmark:
-# 	#	'all.relatedness2.benchmark.txt'
+# 	#	'.compression.benchmark.txt'
 # 	shell:
-# 		'vcftools --vcf {input} --relatedness2 --out {wildcards.prefix} '
-#		#'2> {log}'
+# 		'gzip {input} > {output} '
+# 		#'2> {log} '
+
+
+# rule decompression:
+# 	input:
+# 		'{filename}.gz'
+# 	output:
+# 		'.'
+# 	log:
+# 		'.decompression.log'
+# 	#benchmark:
+# 	#	'.decompression.benchmark.txt'
+# 	shell:
+# 		'gunzip {input} > {output} '
+# 		#'2> {log} '
